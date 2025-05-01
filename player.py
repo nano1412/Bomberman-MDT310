@@ -39,6 +39,8 @@ class Player:
         self.step = 0
         self.start_x = x
         self.start_y = y
+        self.just_dead = 0
+        self.set_bomb = 0
 
     def move(self, map, bombs, explosions, players,enemy):
         '''
@@ -109,7 +111,7 @@ class Player:
             และทำการสร้าง path สำหรับเคลื่อนที่ใหม่ตาม algorithm ที่กำหนด
             '''
             for i in range(len(self.plant)):
-                if self.plant[i]:
+                if self.plant[i] and self.set_bomb < self.bomb_limit:
                     bombs.append(self.plant_bomb(map))
                     self.plant[i] = False
                     map[int(self.pos_x / Player.TILE_SIZE)][int(self.pos_y / Player.TILE_SIZE)] = 3
@@ -131,7 +133,7 @@ class Player:
         วางระเบิดในตำแหน่งที่ player อยู่
         '''
         b = Bomb(self.range, round(self.pos_x / Player.TILE_SIZE), round(self.pos_y / Player.TILE_SIZE), map, self)
-        self.bomb_limit -= 1
+        self.set_bomb += 1
         return b
 
     def check_death(self, exp):
@@ -141,6 +143,10 @@ class Player:
         for e in exp:
             for s in e.sectors:
                 if int(self.pos_x / Player.TILE_SIZE) == s[0] and int(self.pos_y / Player.TILE_SIZE) == s[1]:
+                    # นับไปอีก 3 frames ค่อยตายใหม่
+                    if self.just_dead > 0:
+                        self.just_dead -= 1
+                        return
                     self.life = False
                     print("Player ", self.player_id, " is dead")
                     if e.bomber == self:
@@ -152,6 +158,8 @@ class Player:
                         e.bomber.score += temp
                     if self.score < 0:
                         self.score = 0
+                    self.just_dead = 3
+
                     self.reborn()
                     return
     def reborn(self):

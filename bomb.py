@@ -7,6 +7,7 @@ class Bomb:
         self.pos_y = y
         # time to explode
         self.time = 3000
+        # from player class
         self.bomber = bomber
         self.sectors = []
         self.get_range(map)

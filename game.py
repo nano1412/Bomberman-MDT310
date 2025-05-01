@@ -72,7 +72,7 @@ def game_init(surface, path, player_alg1,player_alg2, en_alg, scale,grid,FPS = 1
 
     if en1_alg is not Algorithm.NONE:
         # สร้าง ghost และกำหนดตำแหน่งเริ่มต้น
-        en1 = Enemy(w-4, 1, en1_alg, 1)
+        en1 = Enemy(w-2, 1, en1_alg, 1)
         en1.load_animations('1', scale)
         enemy_list.append(en1)
         ene_blocks.append(en1)
@@ -119,16 +119,16 @@ def game_init(surface, path, player_alg1,player_alg2, en_alg, scale,grid,FPS = 1
 
     box_img = pygame.image.load('images/terrain/box.png')
     box_img = pygame.transform.scale(box_img, (scale, scale))
+    bomb_images = []
+    for i in range(6):
+        if i < 3:
+            bomb_img = pygame.image.load(f'images/bomb/bomb_p1_{i+1}.png')
+        else:
+            bomb_img = pygame.image.load(f'images/bomb/bomb_p2_{i-2}.png')
+        bomb_img = pygame.transform.scale(bomb_img, (scale, scale))
+        bomb_images.append(bomb_img)
 
-    bomb1_img = pygame.image.load('images/bomb/1.png')
-    bomb1_img = pygame.transform.scale(bomb1_img, (scale, scale))
-
-    bomb2_img = pygame.image.load('images/bomb/2.png')
-    bomb2_img = pygame.transform.scale(bomb2_img, (scale, scale))
-
-    bomb3_img = pygame.image.load('images/bomb/3.png')
-    bomb3_img = pygame.transform.scale(bomb3_img, (scale, scale))
-
+    
     explosion1_img = pygame.image.load('images/explosion/1.png')
     explosion1_img = pygame.transform.scale(explosion1_img, (scale, scale))
 
@@ -139,7 +139,6 @@ def game_init(surface, path, player_alg1,player_alg2, en_alg, scale,grid,FPS = 1
     explosion3_img = pygame.transform.scale(explosion3_img, (scale, scale))
 
     terrain_images = [grass_img, block_img, box_img, grass_img]
-    bomb_images = [bomb1_img, bomb2_img, bomb3_img]
     explosion_images = [explosion1_img, explosion2_img, explosion3_img]
 
 
@@ -154,7 +153,10 @@ def draw(s, grid, tile_size, show_path, game_ended, terrain_images, bomb_images,
 
     
     for x in bombs:
-        s.blit(bomb_images[x.frame], (x.pos_x * tile_size, x.pos_y * tile_size, tile_size, tile_size))
+        if x.bomber.player_id == 1:
+            s.blit(bomb_images[x.frame], (x.pos_x * tile_size, x.pos_y * tile_size, tile_size, tile_size))
+        else:
+            s.blit(bomb_images[x.frame+3], (x.pos_x * tile_size, x.pos_y * tile_size, tile_size, tile_size))
 
     for y in explosions:
         for x in y.sectors:
@@ -205,7 +207,7 @@ def generate_map(grid):
         for j in range(1, len(grid[i]) - 1):
             if grid[i][j] != 0:
                 continue
-            # บางตำแหน่งจะไม่มีกล่องเปล่า เช่น มุมของ map เพราะจะให้ ผู้เล่นและ ghost มีทางหนี
+            #บางตำแหน่งจะไม่มีกล่องเปล่า เช่น มุมของ map เพราะจะให้ ผู้เล่นและ ghost มีทางหนี
             elif (i < 4 or i > len(grid) - 5) and (j < 4 or j > len(grid[i]) - 5):
                 continue
             # 30% chance to place a box วางกล่องเปล่าไว้
@@ -288,15 +290,21 @@ def main(s, tile_size, show_path, terrain_images, bomb_images, explosion_images,
             seconds = start_time - (pygame.time.get_ticks() - start_ticks) // 1000
             if seconds < 0:
                 running = False
-                print("Time's up!")
-                print("Player 1 score: ", player_list[0].score)
-                print("Player 2 score: ", player_list[1].score)
-                print(check_winner())
-                break
+                if player_1 and player_1.algorithm is Algorithm.PLAYER:
+                    player_1.life = False
+                    print("Time's up!")
+                    print("Player 1 score: ", player_1.score)
+                    print("Player 2 score: ", player_list[0].score)
+                    break
+                else:
+                    print("Time's up!")
+                    print("Player 1 score: ", player_list[0].score)
+                    print("Player 2 score: ", player_list[1].score)
+                    print(check_winner())
+                    break
             elif seconds != last_time:
                 last_time = seconds
-                # update_time(s, seconds)
-                # pygame.display.update()
+                
             draw(s, grid, tile_size, show_path, game_ended, terrain_images, bomb_images, explosion_images,seconds)
             
 
@@ -316,12 +324,12 @@ def main(s, tile_size, show_path, terrain_images, bomb_images, explosion_images,
                         print("Debug mode disabled")
             elif player_1 and e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_SPACE:
-                    if player_1.bomb_limit == 0 or not player_1.life:
+                    if player_1.set_bomb == player_1.bomb_limit or not player_1.life:
                         continue
                     temp_bomb = player_1.plant_bomb(grid)
                     bombs.append(temp_bomb)
                     grid[temp_bomb.pos_x][temp_bomb.pos_y] = 3
-                    player_1.bomb_limit -= 1
+                    player_1.set_bomb += 1
                 elif e.key == pygame.K_ESCAPE:
                     running = False
 
@@ -339,7 +347,7 @@ def update_bombs(grid, dt):
     for b in bombs:
         b.update(dt)
         if b.time < 1:
-            b.bomber.bomb_limit += 1
+            b.bomber.set_bomb -= 1
             grid[b.pos_x][b.pos_y] = 0
             exp_temp = Explosion(b.pos_x, b.pos_y, b.range)
             exp_temp.explode(grid, bombs, b)

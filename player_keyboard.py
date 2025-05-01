@@ -30,6 +30,7 @@ class PlayerKeyboard:
         # bomb_limit จำนวน bomb ที่สามารถวางได้ในแต่ละครั้ง
         self.bomb_limit = 1
         self.score = 1000
+        self.set_bomb = 0
 
             
 

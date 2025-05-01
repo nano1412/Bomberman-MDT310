@@ -28,9 +28,9 @@ map_file = './map/grid_test.txt'
 # set algorithm ของ player
 '''
 Algorithm ที่ใช้ในการเล่นของ bomberman สามารถเลือกได้ 3 แบบ
-1. Random สุ่มอย่างเดียว
-2. Player = คุณควบคุมเองโดยใช้ keyboard
-3. your algorithm = อันที่คุณเขียนเอง
+1. RANDOM สุ่มอย่างเดียว
+2. PLAYER = คุณควบคุมเองโดยใช้ keyboard
+3. YourAlgorithm = อันที่คุณเขียนเอง
 
 Algorithm ที่ใช้ในการเล่นของ enemy สามารถเลือกได้ 2 แบบ
 1. MANHATTAN = Manhattan distance
@@ -42,7 +42,7 @@ player_alg1 = Algorithm.YourAlgorithm
 player_alg2 = Algorithm.RANDOM
 player_alg1 = Algorithm.PLAYER (อันนี้คือบอกว่าเล่นเองโดยใช้ keyboard : ปุ่มลูกศรขึ้นลงซ้ายขวา และ spacebar สำหรับวางระเบิด)
 
-Note: เราต้องสามารถเล่นเองได้ทั้งสองตัว คือ เป็น bomberman ตัวที่ 1 หรือ 2 ก็ได้
+Note: เราต้องสามารถเล่นเองโดยใช้ keyboard ได้แค่ bomberman player 1 เท่านั้น
 '''
 
 player_alg1 = Algorithm.RANDOM

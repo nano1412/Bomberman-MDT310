@@ -21,27 +21,15 @@ class Explosion:
     def bomb_chain(self, bombs, map):
 
         for s in self.sectors:
-            # for x in power_ups:
-            #     if x.pos_x == s[0] and x.pos_y == s[1]:
-            #         power_ups.remove(x)
-
+            
             for x in bombs:
                 if x.pos_x == s[0] and x.pos_y == s[1]:
                     map[x.pos_x][x.pos_y] = 0
-                    if x.bomber.bomb_limit < 2:
-                        x.bomber.bomb_limit += 1
                     self.explode(map, bombs, x)
 
     def clear_sectors(self, map):
 
         for i in self.sectors:
-            # if map[i[0]][i[1]] == 2:
-            #     r = random.randint(0, 9)
-            #     if r == 0:
-            #         power_ups.append(PowerUp(i[0], i[1], PowerUpType.BOMB))
-            #     elif r == 1:
-            #         power_ups.append(PowerUp(i[0], i[1], PowerUpType.FIRE))
-
             map[i[0]][i[1]] = 0
 
     def update(self, dt):

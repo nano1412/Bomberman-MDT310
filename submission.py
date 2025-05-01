@@ -39,7 +39,8 @@ class YourPlayer(Player):
             for direction in new_choice:
                 next_x = current[0] + direction[0]
                 next_y = current[1] + direction[1]
-                if self.bomb_limit > 0 and direction[2] == -1:
+                if direction[2] == -1 and self.set_bomb < self.bomb_limit:
+                    
                     for i in range(len(self.plant)):
                         if not self.plant[i]:
                             self.plant[i] = True
