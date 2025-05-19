@@ -70,9 +70,9 @@ class Enemy:
             for player in players:
                 if self.pos_x == player.pos_x and self.pos_y == player.pos_y:
                     # player.life = False  # Kill the player
-                    player.score -= 10  # Deduct points from the player
-                    if player.score < 0:
-                        player.score = 0
+                    player.set_score(player.get_score()-10)  # Deduct points from the player
+                    if player.get_score() < 0:
+                        player.set_score(0)
                     print("Player is losing points!")
                     
         elif len(self.movement_path) > 0 and (grid[self.path[1][0]][self.path[1][1]] == 3 or grid[self.path[1][0]][self.path[1][1]] == 2):
@@ -104,7 +104,7 @@ class Enemy:
             for s in e.sectors:
                 if int(self.pos_x/Enemy.TILE_SIZE ) == s[0] and int(self.pos_y/Enemy.TILE_SIZE  ) == s[1]:
                     self.life = False
-                    e.bomber.score += 100
+                    e.bomber.set_score(e.bomber.get_score() + 100)
                     print("Enemy killed by bomb!")
                     self.reborn()
                     return

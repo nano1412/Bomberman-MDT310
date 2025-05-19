@@ -35,7 +35,7 @@ class Player:
         # plant คือ ต้องการวาง bomb หรือไม่
         self.plant = [False] * self.bomb_limit
         self.algorithm = alg
-        self.score = 1000
+        self.__score = 1000
         self.step = 0
         self.start_x = x
         self.start_y = y
@@ -151,13 +151,13 @@ class Player:
                     print("Player ", self.player_id, " is dead")
                     if e.bomber == self:
                         print("Player ", self.player_id, " is dead by himself")
-                        self.score -= self.score//2
+                        self.__score -= self.__score//2
                     else:
-                        temp = self.score//2
-                        self.score -= temp
-                        e.bomber.score += temp
-                    if self.score < 0:
-                        self.score = 0
+                        temp = self.__score//2
+                        self.__score -= temp
+                        e.bomber.__score += temp
+                    if self.__score < 0:
+                        self.__score = 0
                     self.just_dead = 3
 
                     self.reborn()
@@ -264,6 +264,12 @@ class Player:
 
         return grid
 
+    def get_score(self):
+        return self.__score
+    
+    def set_score(self, score):
+        self.__score = score
+    
     def load_animations(self, en, scale):
         '''
         สำหรับการโหลด animation ของ player

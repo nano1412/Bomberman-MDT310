@@ -293,13 +293,13 @@ def main(s, tile_size, show_path, terrain_images, bomb_images, explosion_images,
                 if player_1 and player_1.algorithm is Algorithm.PLAYER:
                     player_1.life = False
                     print("Time's up!")
-                    print("Player 1 score: ", player_1.score)
-                    print("Player 2 score: ", player_list[0].score)
+                    print("Player 1 score: ", player_1.get_score())
+                    print("Player 2 score: ", player_list[0].get_score())
                     break
                 else:
                     print("Time's up!")
-                    print("Player 1 score: ", player_list[0].score)
-                    print("Player 2 score: ", player_list[1].score)
+                    print("Player 1 score: ", player_list[0].get_score())
+                    print("Player 2 score: ", player_list[1].get_score())
                     print(check_winner())
                     break
             elif seconds != last_time:
@@ -380,9 +380,9 @@ def check_end_game():
     return True
 
 def check_winner():
-    if player_list[0].score > player_list[1].score:
+    if player_list[0].get_score() > player_list[1].get_score():
         return "Player 1 wins!"
-    elif player_list[0].score < player_list[1].score:
+    elif player_list[0].get_score() < player_list[1].get_score():
         return "Player 2 wins!"
     else:
         if player_list[0].step > player_list[1].step:
@@ -401,15 +401,15 @@ def display_scores(screen):
     y_offset = 450  # ตำแหน่ง Y สำหรับแสดงชื่อผู้เล่น
     x_offset = 10   # ตำแหน่ง X สำหรับแสดงชื่อผู้เล่น
     if player_1:
-        text = font.render(f"P1 : {player_1.score}", False, P1_COLOR)
+        text = font.render(f"P1 : {player_1.get_score()}", False, P1_COLOR)
         screen.blit(text, (x_offset, y_offset))
     for pl in player_list:
         if pl.player_id == 1:
-            text = font.render(f"P1 : {pl.score}", False, P1_COLOR)
+            text = font.render(f"P1 : {pl.get_score()}", False, P1_COLOR)
             screen.blit(text, (x_offset, y_offset))
         else:
             y_offset += 30
-            text = font.render(f"P2 : {pl.score}", False, P2_COLOR)
+            text = font.render(f"P2 : {pl.get_score()}", False, P2_COLOR)
             screen.blit(text, (x_offset, y_offset))
     
 def display_debug_icon(screen):

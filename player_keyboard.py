@@ -29,7 +29,7 @@ class PlayerKeyboard:
         self.range = 3
         # bomb_limit จำนวน bomb ที่สามารถวางได้ในแต่ละครั้ง
         self.bomb_limit = 1
-        self.score = 1000
+        self.__score = 1000
         self.set_bomb = 0
 
             
@@ -37,8 +37,8 @@ class PlayerKeyboard:
     def move(self, dx, dy, grid, enemys):
         tempx = int(self.pos_x / PlayerKeyboard.TILE_SIZE)
         tempy = int(self.pos_y / PlayerKeyboard.TILE_SIZE)
-        # test: score every move
-        # self.score -= 1
+        # test: __score every move
+        # self.__score -= 1
 
         map = []
 
@@ -100,15 +100,18 @@ class PlayerKeyboard:
                     print("Player ", self.player_id, " is dead")
                     if e.bomber == self:
                         print("Player ", self.player_id, " is dead by himself")
-                        self.score -= self.score//2
+                        self.__score -= self.__score//2
                     else:
-                        temp = self.score//2
-                        self.score -= temp
-                        e.bomber.score += temp
-                    if self.score < 0:
-                        self.score = 0
+                        temp = self.__score//2
+                        self.__score -= temp
+                        e.bomber.__score += temp
+                    if self.__score < 0:
+                        self.__score = 0
                     self.reborn()
                     return
+                
+    def get_score(self):
+        return self.__score
 
     def load_animations(self, scale):
         front = []
