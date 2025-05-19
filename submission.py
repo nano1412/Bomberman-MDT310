@@ -260,8 +260,8 @@ class YourPlayer(Player):
                         ajecenti = i+pi
                         ajecentj = j+pj
                         tempPath = self.a_star_search(grid, current_pos, (ajecenti,ajecentj), [])
-                        print((ajecenti,ajecentj))
-                        print(tempPath)
+                        # print((ajecenti,ajecentj))
+                        # print(tempPath)
                         if tempPath is not None and len(tempPath) < closest_target_step:
                             closest_target = (ajecenti,ajecentj)
                             path = tempPath
@@ -325,7 +325,7 @@ class YourPlayer(Player):
         return
     
     def your_algorithm(self, grid):
-        print(self.theTargetSpawnPoint)
+        # print(self.theTargetSpawnPoint)
         print(self.strategy_mode)
         current_pos = (int(self.pos_x/Player.TILE_SIZE), int(self.pos_y/Player.TILE_SIZE))
         if self.theTarget == None:
@@ -342,27 +342,23 @@ class YourPlayer(Player):
          # ตรวจสอบสถานะความปลอดภัย
         in_danger = self.danger_map[current_pos[0]][current_pos[1]] > 2
 
-        if (self.me.life == False or self.me.get_score() <= self.another.get_score()) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock" and not self.strategy_mode == "random":
-            self.strategy_mode = "lure"
 
-        if self.me.get_score() > self.another.get_score():
-            self.strategy_mode = "survive"
 
 
         if self.strategy_mode == "lure":
-            print('in L')
+            # print('in L')
             self.LureEnemy(grid,current_pos)
         elif self.strategy_mode == "clearBlock":
-            print('in CB')
+            # print('in CB')
             self.ClearBlock(grid,current_pos,targets)
         elif self.strategy_mode == "random":
-            print('in R')
+            # print('in R')
             self.Random(grid)
         elif self.strategy_mode == "toSpawn":
-            print('in toS')
+            # print('in toS')
             self.GoToSpawn(grid,current_pos)
         elif self.strategy_mode == "survive":
-            print('in survive')
+            # print('in survive')
             self.Survive(current_pos,grid)
             
         else:
@@ -374,8 +370,12 @@ class YourPlayer(Player):
                     self.plant[i] = True
                     
                     break 
-        # check random case have to be here or else it will be overwriten
         # if it still none here, mean enemy is all Random (or use other algo)
+        if (self.me.life == False or self.me.get_score() <= self.another.get_score()) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock" and not self.strategy_mode == "random":
+            self.strategy_mode = "lure"
+
+        if self.me.get_score() > self.another.get_score():
+            self.strategy_mode = "survive"
         if self.theTarget == None:
             self.strategy_mode = "random"
         return
