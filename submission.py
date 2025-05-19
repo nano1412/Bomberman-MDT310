@@ -5,6 +5,10 @@ from collections import deque
 import math
 import heapq
 
+import game
+from enemy import Enemy
+from enums.algorithm import Algorithm
+
 class YourPlayer(Player):
     def __init__(self, player_id, x, y, alg):
         super().__init__(player_id, x, y, alg)
@@ -13,6 +17,14 @@ class YourPlayer(Player):
         self.bomb_cooldown = 0
         self.danger_map = None
         self.path_history = []
+        self.me = None
+
+        self.enemys = []
+        self.players = []
+        self.theTarget = None
+        self.theTargetPosition = None
+        self.theTargetSpawnPoint = None
+        self.isStop = False
 
     def manhattan_distance(self, a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -46,16 +58,17 @@ class YourPlayer(Player):
 
     def find_targets(self, grid):
         """ค้นหาเป้าหมายที่สำคัญ (ศัตรู, ผู้เล่น, กล่อง)"""
+        rawTargets = []
         targets = []
         current_pos = (int(self.pos_x/Player.TILE_SIZE), int(self.pos_y/Player.TILE_SIZE))
         
         for i in range(len(grid)):
             for j in range(len(grid[0])):
-                if grid[i][j] == 4:  # ศัตรู
-                    targets.append((i, j, 10, "enemy"))  # คะแนนความสำคัญสูง
-                elif grid[i][j] == 5:  # ผู้เล่นอื่น
-                    targets.append((i, j, 8, "player"))
-                elif grid[i][j] == 2:  # กล่องที่ทำลายได้
+                # if grid[i][j] == 4:  # ศัตรู
+                #     rawTargets.append((i, j, 10, "enemy"))  # คะแนนความสำคัญสูง
+                # elif grid[i][j] == 5:  # ผู้เล่นอื่น
+                #     rawTargets.append((i, j, 8, "player"))
+                if grid[i][j] == 2:  # กล่องที่ทำลายได้
                     # ให้ความสำคัญกับกล่องที่อยู่ใกล้ศัตรูหรือผู้เล่น
                     box_value = 3
                     for di, dj in [(1,0), (-1,0), (0,1), (0,-1)]:
@@ -64,8 +77,15 @@ class YourPlayer(Player):
                             if grid[ni][nj] in [4, 5]:
                                 box_value = 6  # เพิ่มความสำคัญ
                                 break
-                    targets.append((i, j, box_value, "box"))
-        
+                    rawTargets.append((i, j, box_value, "box"))
+
+        # ให้ตำแหน่งเดินจริงเป็น +- 2 จากเป้าหมาย
+        for rawTarget in rawTargets:
+            for actualDistinationi,actualDistinationj in [(2,0),(-2,0),(0,2),(0,-2)]:
+                actualDistinationi+=rawTarget[0]
+                actualDistinationj+=rawTarget[1]
+                if 0 <= actualDistinationi < len(grid) and 0 <= actualDistinationj < len(grid[0]):
+                    targets.append((actualDistinationi,actualDistinationj,rawTarget[2],rawTarget[3]))
         # เรียงลำดับตามคะแนนความสำคัญและระยะทาง
         targets.sort(key=lambda t: (-t[2], self.manhattan_distance(current_pos, (t[0], t[1]))))
         return targets
@@ -135,20 +155,21 @@ class YourPlayer(Player):
         if self.bomb_limit <= 0 or self.bomb_cooldown > 0:
             return False
             
+        
         # ตรวจสอบว่าวางระเบิดแล้วจะทำลายอะไรได้บ้าง
-        potential_targets = 0
-        for direction in [(1,0), (-1,0), (0,1), (0,-1)]:
-            for i in range(1, self.range + 1):
-                nx, ny = current_pos[0] + direction[0]*i, current_pos[1] + direction[1]*i
-                if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]):
-                    if grid[nx][ny] == 2:  # กล่อง
-                        potential_targets += 1
-                        break
-                    elif grid[nx][ny] in [4, 5]:  # ศัตรูหรือผู้เล่น
-                        potential_targets += 2
-                        break
-                    elif grid[nx][ny] in [1, 3]:  # กำแพงหรือสิ่งกีดขวาง
-                        break
+        # potential_targets = 0
+        # for direction in [(1,0), (-1,0), (0,1), (0,-1)]:
+        #     for i in range(1, self.range + 1):
+        #         nx, ny = current_pos[0] + direction[0]*i, current_pos[1] + direction[1]*i
+        #         if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]):
+        #             if grid[nx][ny] == 2:  # กล่อง
+        #                 potential_targets += 1
+        #                 break
+        #             elif grid[nx][ny] in [4, 5]:  # ศัตรูหรือผู้เล่น
+        #                 potential_targets += 2
+        #                 break
+        #             elif grid[nx][ny] in [1, 3]:  # กำแพงหรือสิ่งกีดขวาง
+        #                 break
         
         # ตรวจสอบว่ามีทางหนีหลังจากวางระเบิดหรือไม่
         escape_path = False
@@ -159,7 +180,7 @@ class YourPlayer(Player):
                     escape_path = True
                     break
         
-        return potential_targets > 0 and escape_path
+        return  escape_path
 
     def find_safe_spot(self, grid, current_pos, bombs):
         """หาตำแหน่งที่ปลอดภัยที่สุดเมื่ออยู่ในอันตราย"""
@@ -191,19 +212,82 @@ class YourPlayer(Player):
             if len(set(self.last_positions)) <= 2:
                 return True
         return False
+    
+    def GetMe(self):
+        for pl in game.player_list:
+            if pl.algorithm == Algorithm.YourAlgorithm:
+                self.me = pl
+
+    def GetTheMANHATTANGuys(self):
+        for en in game.enemy_list:
+            if en.algorithm == Algorithm.MANHATTAN:
+                self.theTarget = en
+
+    def LureEnemy(self,grid,current_pos):
+        
+        path = self.a_star_search(grid, current_pos, (int(self.theTarget.pos_x/Enemy.TILE_SIZE),int(self.theTarget.pos_y/Enemy.TILE_SIZE)), [])
+        print("MANHATTAN position")
+        print((self.theTarget.pos_x,self.theTarget.pos_y))
+        print(path)
+        if path and len(path) > 0:
+            self.path = [current_pos] + path[:3]
+            self.movement_path = []
+            for i in range(1, len(self.path)):
+                dx = self.path[i][0] - self.path[i-1][0]
+                dy = self.path[i][1] - self.path[i-1][1]
+                direction = {(0,1): 0, (1,0): 1, (0,-1): 2, (-1,0): 3}[(dx, dy)]
+                self.movement_path.append(direction)
+        self.GoToSpawn(grid,current_pos)
+        
+    def GoToSpawn(self,grid,current_pos):
+        print("go to spawn")
+        path = self.a_star_search(grid, current_pos, (self.theTarget.start_x,self.theTarget.start_y), [])
+        print("MANHATTAN position")
+        print((self.theTarget.pos_x,self.theTarget.pos_y))
+        print(path)
+        if path and len(path) > 0:
+            self.path = [current_pos] + path[:3]
+            self.movement_path = []
+            for i in range(1, len(self.path)):
+                dx = self.path[i][0] - self.path[i-1][0]
+                dy = self.path[i][1] - self.path[i-1][1]
+                direction = {(0,1): 0, (1,0): 1, (0,-1): 2, (-1,0): 3}[(dx, dy)]
+                self.movement_path.append(direction)
+
+                for di, dj in [(1,0), (-1,0), (0,1), (0,-1)]:
+                        ni, nj = self.theTarget.start_x + di, self.theTarget.start_y  + dj
+                        if 0 <= ni < len(grid) and 0 <= nj < len(grid[0]):
+                            if current_pos == (ni,nj):
+                                for i in range(len(self.plant)):
+                                    if not self.plant[i]:
+                                        self.plant[i] = True
+                                        self.bomb_cooldown = 5
+                                break
+                if current_pos == (self.theTarget.start_x,self.theTarget.start_y):
+                    self.isStop = True
+            return
 
     def your_algorithm(self, grid):
+        print("run")
         current_pos = (int(self.pos_x/Player.TILE_SIZE), int(self.pos_y/Player.TILE_SIZE))
-        self.last_positions.append(current_pos)
-        
+        if self.theTarget == None:
+            self.GetTheMANHATTANGuys()
+            self.GetMe()
+            print(self.theTarget)
         # อัพเดตแผนที่อันตราย
         self.update_danger_map(grid, [], [])  # หมายเหตุ: ต้องส่ง bombs และ explosions มาจากภายนอก
+        
+        if self.me.life == False:
+            self.isStop = False
+
+        if not self.isStop:
+            self.LureEnemy(grid,current_pos)
+            
+        return
         
         # ตรวจสอบสถานะความปลอดภัย
         in_danger = self.danger_map[current_pos[0]][current_pos[1]] > 2
         
-        # หาเป้าหมาย
-        targets = self.find_targets(grid)
         
         # กำหนดกลยุทธ์
         if in_danger:
@@ -238,6 +322,12 @@ class YourPlayer(Player):
             for target in targets:
                 if target[3] in ["enemy", "player"] or (target[3] == "box" and target[2] >= 5):
                     path = self.a_star_search(grid, current_pos, (target[0], target[1]), [])
+                    print("player pos")
+                    print(current_pos)
+                    print(target[0])
+                    print(int(self.theTarget.pos_x/Enemy.TILE_SIZE) )
+                    print(target[1])
+                    print(int(self.theTarget.pos_y/Enemy.TILE_SIZE))
                     if path:
                         best_target = target
                         break
