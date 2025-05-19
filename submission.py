@@ -14,7 +14,7 @@ class YourPlayer(Player):
     def __init__(self, player_id, x, y, alg):
         super().__init__(player_id, x, y, alg)
         self.last_positions = deque(maxlen=5)  # เก็บตำแหน่งล่าสุดเพื่อป้องกันการเดินวน
-        self.strategy_mode = "lure"  # หรือ "defensive"
+        self.strategy_mode = "random" 
         self.bomb_cooldown = 0
         self.danger_map = None
         self.path_history = []
@@ -218,8 +218,8 @@ class YourPlayer(Player):
         for en in game.enemy_list:
             if en.algorithm == Algorithm.MANHATTAN or en.algorithm == Algorithm.DFS:
                 self.theTarget = en
-
-        self.theTargetSpawnPoint = (self.theTarget.start_x,self.theTarget.start_y)
+        if self.theTarget is not None:
+            self.theTargetSpawnPoint = (self.theTarget.start_x,self.theTarget.start_y)
 
     def LureEnemy(self,grid,current_pos):
         
@@ -298,7 +298,30 @@ class YourPlayer(Player):
                             self.strategy_mode = "survive"
                     
         return
-            
+    def Random(self,grid):
+        start = [int(self.pos_x/Player.TILE_SIZE ), int(self.pos_y/Player.TILE_SIZE )]
+        self.path = [start]
+        # [0,0,-1] คือวางระเบิด
+        new_choice = [self.dire[0], self.dire[1], self.dire[2], self.dire[3],[0,0,-1]]
+        random.shuffle(new_choice)
+        current = start
+        for i in range(3):
+            for direction in new_choice:
+                next_x = current[0] + direction[0]
+                next_y = current[1] + direction[1]
+                if direction[2] == -1 and self.set_bomb < self.bomb_limit:
+                    
+                    for i in range(len(self.plant)):
+                        if not self.plant[i]:
+                            self.plant[i] = True
+                            break
+                if 0 <= next_x < len(grid) and 0 <= next_y < len(grid[0]) and grid[next_x][next_y] not in [2,3]:
+                    self.path.append([next_x, next_y])
+                    self.movement_path.append(direction[2])
+                    current = [next_x, next_y]
+                    break
+        self.strategy_mode = "survive"
+        return    
     def your_algorithm(self, grid):
         print(self.theTargetSpawnPoint)
         print(self.strategy_mode)
@@ -307,10 +330,9 @@ class YourPlayer(Player):
             self.GetTheEnemyThatFollowPlayer()
             self.GetMe()
             print(self.theTarget)
+            self.strategy_mode = "random"
 
-        # if it still none here, mean enemy is all Random (or use other algo)
-        # if self.theTarget == None:
-        #     self.strategy_mode = "random"
+        
         # หาเป้าหมาย
         targets = self.find_targets(grid)
         # อัพเดตแผนที่อันตราย
@@ -318,7 +340,7 @@ class YourPlayer(Player):
          # ตรวจสอบสถานะความปลอดภัย
         in_danger = self.danger_map[current_pos[0]][current_pos[1]] > 2
 
-        if (self.me.life == False or self.me.get_score() <= self.another.get_score()) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock":
+        if (self.me.life == False or self.me.get_score() <= self.another.get_score()) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock" and not self.strategy_mode == "random":
             self.strategy_mode = "lure"
 
         if self.me.get_score() > self.another.get_score():
@@ -331,6 +353,9 @@ class YourPlayer(Player):
         elif self.strategy_mode == "clearBlock":
             print('in CB')
             self.ClearBlock(grid,current_pos,targets)
+        elif self.strategy_mode == "random":
+            print('in R')
+            self.Random(grid)
         elif self.strategy_mode == "toSpawn":
             print('in toS')
             self.GoToSpawn(grid,current_pos)
@@ -361,6 +386,10 @@ class YourPlayer(Player):
                     self.plant[i] = True
                     
                     break 
+
+        # if it still none here, mean enemy is all Random (or use other algo)
+        if self.theTarget == None:
+            self.strategy_mode = "random"
         return
             # ถ้าไม่มีกลยุทธ์อื่น ให้เดินแบบสุ่มแต่ปลอดภัย
     
