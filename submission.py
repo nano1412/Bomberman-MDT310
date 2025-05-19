@@ -214,9 +214,9 @@ class YourPlayer(Player):
             else:
                 self.another = pl
 
-    def GetTheMANHATTANGuys(self):
+    def GetTheEnemyThatFollowPlayer(self):
         for en in game.enemy_list:
-            if en.algorithm == Algorithm.MANHATTAN:
+            if en.algorithm == Algorithm.MANHATTAN or en.algorithm == Algorithm.DFS:
                 self.theTarget = en
 
         self.theTargetSpawnPoint = (self.theTarget.start_x,self.theTarget.start_y)
@@ -261,24 +261,28 @@ class YourPlayer(Player):
             return
         
     def ClearBlock(self,grid,current_pos,targets):
-        best_target = None
-        for target in targets:
-            if target[3] in ["enemy", "player"] or (target[3] == "box" and target[2] >= 5):
-                path = self.a_star_search(grid, current_pos, (target[0], target[1]), [])
-                if path:
-                    best_target = target
-                    break
-        
-        if best_target:
-            # ตรวจสอบว่าควรวางระเบิดหรือไม่
-            if self.should_plant_bomb(grid, current_pos):
-                for i in range(len(self.plant)):
-                    if not self.plant[i]:
-                        self.plant[i] = True
-                        self.bomb_cooldown = 5
-                        break
+        path = self.a_star_search(grid, current_pos, (int(self.theTarget.pos_x/Enemy.TILE_SIZE),int(self.theTarget.pos_y/Enemy.TILE_SIZE)), [])
+        if path and len(path) > 0:
+            self.strategy_mode = "lure"
+            return
             
-            # เดินทางไปยังเป้าหมาย
+        closest_target_step = 999
+        closest_target = None
+        path = None
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] == 2:
+                    for pi,pj in [(0,1),(1,0),(0,-1),(-1,0)]:
+                        ajecenti = i+pi
+                        ajecentj = j+pj
+                        tempPath = self.a_star_search(grid, current_pos, (ajecenti,ajecentj), [])
+                        print((ajecenti,ajecentj))
+                        print(tempPath)
+                        if tempPath is not None and len(tempPath) < closest_target_step:
+                            closest_target = (ajecenti,ajecentj)
+                            path = tempPath
+
+        if closest_target is not None:
             if path and len(path) > 0:
                 self.path = [current_pos] + path[:3]
                 self.movement_path = []
@@ -287,16 +291,26 @@ class YourPlayer(Player):
                     dy = self.path[i][1] - self.path[i-1][1]
                     direction = {(0,1): 0, (1,0): 1, (0,-1): 2, (-1,0): 3}[(dx, dy)]
                     self.movement_path.append(direction)
-                return
+
+                    for i in range(len(self.plant)):
+                        if not self.plant[i]:
+                            self.plant[i] = True
+                            self.strategy_mode = "survive"
+                    
+        return
             
     def your_algorithm(self, grid):
         print(self.theTargetSpawnPoint)
         print(self.strategy_mode)
         current_pos = (int(self.pos_x/Player.TILE_SIZE), int(self.pos_y/Player.TILE_SIZE))
         if self.theTarget == None:
-            self.GetTheMANHATTANGuys()
+            self.GetTheEnemyThatFollowPlayer()
             self.GetMe()
             print(self.theTarget)
+
+        # if it still none here, mean enemy is all Random (or use other algo)
+        # if self.theTarget == None:
+        #     self.strategy_mode = "random"
         # หาเป้าหมาย
         targets = self.find_targets(grid)
         # อัพเดตแผนที่อันตราย
@@ -333,10 +347,10 @@ class YourPlayer(Player):
                 direction = random.choice(safe_directions)
                 self.path = [current_pos, [current_pos[0] + direction[0], current_pos[1] + direction[1]]]
                 self.movement_path = [direction[2]]
-            else:
-                # ไม่มีทางเดินที่ปลอดภัย ให้อยู่กับที่
-                self.path = [current_pos]
-                self.movement_path = []  
+            # else:
+            #     # ไม่มีทางเดินที่ปลอดภัย ให้อยู่กับที่
+            #     self.path = [current_pos]
+            #     self.movement_path = []  
             
         else:
             self.movement_path = [] 

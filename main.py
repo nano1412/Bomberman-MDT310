@@ -47,7 +47,7 @@ Note: เราต้องสามารถเล่นเองโดยใ�
 
 player_alg1 = Algorithm.YourAlgorithm
 player_alg2 = Algorithm.DFS
-en1_alg = Algorithm.MANHATTAN
+en1_alg = Algorithm.RANDOM
 en2_alg = Algorithm.RANDOM
 
 GRID_BASE = create_map(read_line(map_file))
