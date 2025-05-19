@@ -148,23 +148,7 @@ class YourPlayer(Player):
         """ตัดสินใจว่าจะวางระเบิดหรือไม่"""
         if self.bomb_limit <= 0 or self.bomb_cooldown > 0:
             return False
-            
-        
-        # ตรวจสอบว่าวางระเบิดแล้วจะทำลายอะไรได้บ้าง
-        # potential_targets = 0
-        # for direction in [(1,0), (-1,0), (0,1), (0,-1)]:
-        #     for i in range(1, self.range + 1):
-        #         nx, ny = current_pos[0] + direction[0]*i, current_pos[1] + direction[1]*i
-        #         if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]):
-        #             if grid[nx][ny] == 2:  # กล่อง
-        #                 potential_targets += 1
-        #                 break
-        #             elif grid[nx][ny] in [4, 5]:  # ศัตรูหรือผู้เล่น
-        #                 potential_targets += 2
-        #                 break
-        #             elif grid[nx][ny] in [1, 3]:  # กำแพงหรือสิ่งกีดขวาง
-        #                 break
-        
+
         # ตรวจสอบว่ามีทางหนีหลังจากวางระเบิดหรือไม่
         escape_path = False
         for direction in [(1,0), (-1,0), (0,1), (0,-1)]:
@@ -242,8 +226,6 @@ class YourPlayer(Player):
             self.strategy_mode = "clearBlock"
             print('no path found')
             
-        
-        
     def GoToSpawn(self,grid,current_pos):
         path = self.a_star_search(grid, current_pos, self.theTargetSpawnPoint, [])
         if path and len(path) > 0:
@@ -322,6 +304,24 @@ class YourPlayer(Player):
                     break
         self.strategy_mode = "survive"
         return    
+    def Survive(self,current_pos,grid):
+        safe_directions = []
+        for direction in self.dire:
+            nx, ny = current_pos[0] + direction[0], current_pos[1] + direction[1]
+            if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]):
+                if grid[nx][ny] == 0 and self.danger_map[nx][ny] < 2:
+                    safe_directions.append(direction)
+    
+        if safe_directions:
+            direction = random.choice(safe_directions)
+            self.path = [current_pos, [current_pos[0] + direction[0], current_pos[1] + direction[1]]]
+            self.movement_path = [direction[2]]
+        # else:
+        #     # ไม่มีทางเดินที่ปลอดภัย ให้อยู่กับที่
+        #     self.path = [current_pos]
+        #     self.movement_path = []  
+        return
+    
     def your_algorithm(self, grid):
         print(self.theTargetSpawnPoint)
         print(self.strategy_mode)
@@ -361,21 +361,7 @@ class YourPlayer(Player):
             self.GoToSpawn(grid,current_pos)
         elif self.strategy_mode == "survive":
             print('in survive')
-            safe_directions = []
-            for direction in self.dire:
-                nx, ny = current_pos[0] + direction[0], current_pos[1] + direction[1]
-                if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]):
-                    if grid[nx][ny] == 0 and self.danger_map[nx][ny] < 2:
-                        safe_directions.append(direction)
-        
-            if safe_directions:
-                direction = random.choice(safe_directions)
-                self.path = [current_pos, [current_pos[0] + direction[0], current_pos[1] + direction[1]]]
-                self.movement_path = [direction[2]]
-            # else:
-            #     # ไม่มีทางเดินที่ปลอดภัย ให้อยู่กับที่
-            #     self.path = [current_pos]
-            #     self.movement_path = []  
+            self.Survive(current_pos,grid)
             
         else:
             self.movement_path = [] 
@@ -386,101 +372,10 @@ class YourPlayer(Player):
                     self.plant[i] = True
                     
                     break 
-
+        # check random case have to be here or else it will be overwriten
         # if it still none here, mean enemy is all Random (or use other algo)
         if self.theTarget == None:
             self.strategy_mode = "random"
         return
-            # ถ้าไม่มีกลยุทธ์อื่น ให้เดินแบบสุ่มแต่ปลอดภัย
-    
-       
-        
-        
-        # กำหนดกลยุทธ์
-        if in_danger:
-            self.strategy_mode = "defensive"
-        elif targets and targets[0][2] >= 8:  # มีศัตรูหรือผู้เล่นใกล้เคียง
-            self.strategy_mode = "aggressive"
-        else:
-            self.strategy_mode = "explore"
-        
-        # ลดคูลดาวน์ระเบิด
-        if self.bomb_cooldown > 0:
-            self.bomb_cooldown -= 1
-        
-        # กลยุทธ์ป้องกันตัว
-        if in_danger:
-            safe_spot = self.find_safe_spot(grid, current_pos, [])  # หมายเหตุ: ต้องส่ง bombs มาจากภายนอก
-            if safe_spot:
-                path = self.a_star_search(grid, current_pos, safe_spot, [])
-                if path and len(path) > 0:
-                    self.path = [current_pos] + path[:3]
-                    self.movement_path = []
-                    for i in range(1, len(self.path)):
-                        dx = self.path[i][0] - self.path[i-1][0]
-                        dy = self.path[i][1] - self.path[i-1][1]
-                        direction = {(0,1): 0, (1,0): 1, (0,-1): 2, (-1,0): 3}[(dx, dy)]
-                        self.movement_path.append(direction)
-                    return
-        
-        # กลยุทธ์รุก
-        if self.strategy_mode == "aggressive" and targets:
-            best_target = None
-            for target in targets:
-                if target[3] in ["enemy", "player"] or (target[3] == "box" and target[2] >= 5):
-                    path = self.a_star_search(grid, current_pos, (target[0], target[1]), [])
-                    print("player pos")
-                    print(current_pos)
-                    print(target[0])
-                    print(int(self.theTarget.pos_x/Enemy.TILE_SIZE) )
-                    print(target[1])
-                    print(int(self.theTarget.pos_y/Enemy.TILE_SIZE))
-                    if path:
-                        best_target = target
-                        break
-            
-            if best_target:
-                # ตรวจสอบว่าควรวางระเบิดหรือไม่
-                if self.should_plant_bomb(grid, current_pos):
-                    for i in range(len(self.plant)):
-                        if not self.plant[i]:
-                            self.plant[i] = True
-                            self.bomb_cooldown = 5
-                            break
-                
-                # เดินทางไปยังเป้าหมาย
-                if path and len(path) > 0:
-                    self.path = [current_pos] + path[:3]
-                    self.movement_path = []
-                    for i in range(1, len(self.path)):
-                        dx = self.path[i][0] - self.path[i-1][0]
-                        dy = self.path[i][1] - self.path[i-1][1]
-                        direction = {(0,1): 0, (1,0): 1, (0,-1): 2, (-1,0): 3}[(dx, dy)]
-                        self.movement_path.append(direction)
-                    return
-        
-        # กลยุทธ์สำรวจ
-        if self.strategy_mode == "explore" or not targets:
-            # หาเส้นทางไปยังพื้นที่ที่ยังไม่สำรวจ
-            unexplored = []
-            for i in range(len(grid)):
-                for j in range(len(grid[0])):
-                    if grid[i][j] == 0 and (i,j) not in self.path_history:
-                        unexplored.append((i,j))
-            
-            if unexplored:
-                unexplored.sort(key=lambda pos: self.manhattan_distance(current_pos, pos))
-                target = unexplored[0]
-                path = self.a_star_search(grid, current_pos, target, [])
-                if path and len(path) > 0:
-                    self.path = [current_pos] + path[:3]
-                    self.movement_path = []
-                    for i in range(1, len(self.path)):
-                        dx = self.path[i][0] - self.path[i-1][0]
-                        dy = self.path[i][1] - self.path[i-1][1]
-                        direction = {(0,1): 0, (1,0): 1, (0,-1): 2, (-1,0): 3}[(dx, dy)]
-                        self.movement_path.append(direction)
-                    self.path_history.extend(path[:3])
-                    return
         
         

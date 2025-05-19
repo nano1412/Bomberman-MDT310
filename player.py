@@ -112,7 +112,7 @@ class Player:
             '''
             for i in range(len(self.plant)):
                 if self.plant[i] and self.set_bomb < self.bomb_limit:
-                    bombs.append(self.plant_bomb(map))
+                    bombs.append(self.PlantBomb(map))
                     self.plant[i] = False
                     map[int(self.pos_x / Player.TILE_SIZE)][int(self.pos_y / Player.TILE_SIZE)] = 3
         
@@ -128,7 +128,7 @@ class Player:
             self.direction = self.movement_path[0]
             self.move(map, bombs, explosions, players,enemy)
 
-    def plant_bomb(self, map):
+    def PlantBomb(self, map):
         '''
         วางระเบิดในตำแหน่งที่ player อยู่
         '''
