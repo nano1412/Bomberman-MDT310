@@ -304,10 +304,10 @@ class YourPlayer(Player):
          # ตรวจสอบสถานะความปลอดภัย
         in_danger = self.danger_map[current_pos[0]][current_pos[1]] > 2
 
-        if (self.me.life == False or self.me.score <= self.another.score) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock":
+        if (self.me.life == False or self.me.get_score() <= self.another.get_score()) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock":
             self.strategy_mode = "lure"
 
-        if self.me.score > self.another.score:
+        if self.me.get_score() > self.another.get_score():
             self.strategy_mode = "survive"
 
 
