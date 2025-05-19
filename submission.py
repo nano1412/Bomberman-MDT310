@@ -191,10 +191,12 @@ class YourPlayer(Player):
                 return True
         return False
     
-    def GetMe(self):
+    def GetMe(self,current_pos):
         for pl in game.player_list:
-            if pl.algorithm == Algorithm.YourAlgorithm:
+            if pl.algorithm == Algorithm.YourAlgorithm and current_pos == (pl.start_x,pl.start_y):
                 self.me = pl
+                print(current_pos)
+                print((self.me.start_x,self.me.start_y))
             else:
                 self.another = pl
 
@@ -328,7 +330,7 @@ class YourPlayer(Player):
         current_pos = (int(self.pos_x/Player.TILE_SIZE), int(self.pos_y/Player.TILE_SIZE))
         if self.theTarget == None:
             self.GetTheEnemyThatFollowPlayer()
-            self.GetMe()
+            self.GetMe(current_pos)
             print(self.theTarget)
             self.strategy_mode = "random"
 
