@@ -45,8 +45,8 @@ player_alg1 = Algorithm.PLAYER (อันนี้คือบอกว่าเ
 Note: เราต้องสามารถเล่นเองโดยใช้ keyboard ได้แค่ bomberman player 1 เท่านั้น
 '''
 
-player_alg1 = Algorithm.DFS
-player_alg2 = Algorithm.YourAlgorithm
+player_alg1 = Algorithm.YourAlgorithm
+player_alg2 = Algorithm.DFS
 en1_alg = Algorithm.RANDOM
 en2_alg = Algorithm.MANHATTAN
 

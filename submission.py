@@ -13,20 +13,14 @@ from enums.algorithm import Algorithm
 class YourPlayer(Player):
     def __init__(self, player_id, x, y, alg):
         super().__init__(player_id, x, y, alg)
-        self.last_positions = deque(maxlen=5)  # เก็บตำแหน่งล่าสุดเพื่อป้องกันการเดินวน
         self.strategy_mode = "random" 
-        self.bomb_cooldown = 0
         self.danger_map = None
-        self.path_history = []
         self.me = None
         self.another = None
 
-        self.enemys = []
-        self.players = []
         self.theTarget = None
         self.theTargetPosition = None
         self.theTargetSpawnPoint = None
-        self.isStop = False
 
     def manhattan_distance(self, a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -143,53 +137,6 @@ class YourPlayer(Player):
                     heapq.heappush(oheap, (fscore[neighbor], neighbor))
         
         return None  # ไม่พบเส้นทาง
-
-    def should_plant_bomb(self, grid, current_pos):
-        """ตัดสินใจว่าจะวางระเบิดหรือไม่"""
-        if self.bomb_limit <= 0 or self.bomb_cooldown > 0:
-            return False
-
-        # ตรวจสอบว่ามีทางหนีหลังจากวางระเบิดหรือไม่
-        escape_path = False
-        for direction in [(1,0), (-1,0), (0,1), (0,-1)]:
-            nx, ny = current_pos[0] + direction[0], current_pos[1] + direction[1]
-            if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]):
-                if grid[nx][ny] == 0 and self.danger_map[nx][ny] < 2:
-                    escape_path = True
-                    break
-        
-        return  escape_path
-
-    def find_safe_spot(self, grid, current_pos, bombs):
-        """หาตำแหน่งที่ปลอดภัยที่สุดเมื่ออยู่ในอันตราย"""
-        safe_spots = []
-        for i in range(len(grid)):
-            for j in range(len(grid[0])):
-                if grid[i][j] == 0 and self.danger_map[i][j] < 2:  # เซลล์ที่เดินได้และปลอดภัย
-                    # ตรวจสอบว่าไม่มีการระเบิดหรือระเบิดที่กำลังจะระเบิด
-                    is_safe = True
-                    for bomb in bombs:
-                        if (bomb.pos_x == i and bomb.pos_y == j) or \
-                           (abs(bomb.pos_x - i) <= bomb.range and bomb.pos_y == j) or \
-                           (abs(bomb.pos_y - j) <= bomb.range and bomb.pos_x == i):
-                            is_safe = False
-                            break
-                    if is_safe:
-                        safe_spots.append((i, j))
-        
-        if safe_spots:
-            # หาตำแหน่งที่ปลอดภัยและใกล้ที่สุด
-            safe_spots.sort(key=lambda pos: self.manhattan_distance(current_pos, pos))
-            return safe_spots[0]
-        return None
-
-    def avoid_cycles(self, path):
-        """ป้องกันการเดินวนเป็นวงกลม"""
-        if len(self.last_positions) == self.last_positions.maxlen:
-            # ตรวจสอบว่าตำแหน่งซ้ำเกิน 3 ครั้งหรือไม่
-            if len(set(self.last_positions)) <= 2:
-                return True
-        return False
     
     def GetMe(self,current_pos):
         for pl in game.player_list:
@@ -370,12 +317,12 @@ class YourPlayer(Player):
                     self.plant[i] = True
                     
                     break 
-        # if it still none here, mean enemy is all Random (or use other algo)
         if (self.me.life == False or self.me.get_score() <= self.another.get_score()) and not self.strategy_mode == "toSpawn" and not self.strategy_mode == "clearBlock" and not self.strategy_mode == "random":
             self.strategy_mode = "lure"
 
         if self.me.get_score() > self.another.get_score():
             self.strategy_mode = "survive"
+        # if it still none here, mean enemy is all Random (or use other algo)
         if self.theTarget == None:
             self.strategy_mode = "random"
         return
